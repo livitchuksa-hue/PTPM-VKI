@@ -3,7 +3,7 @@ import sys
 import re
 import os
 from datetime import datetime
-
+print('приветственное сообщение')
 
 log_format = "%(asctime)s | [%(levelname)-7s] | %(message)s"
 date_format = "%Y-%m-%d %H:%M:%S"

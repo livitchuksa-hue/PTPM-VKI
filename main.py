@@ -75,6 +75,12 @@ def validate_login(login: str):
     if login is None or login == "":
         return False, "Логин не может быть пустым"
 
+    login_lower = login.lower()
+
+    for banned_word in BLACKLIST_LOGINS:
+        if banned_word in login_lower:
+            return False, f"Логин содержит запрещенное слово: '{banned_word}'"
+
     # Попытка интерпретировать как телефон
     if login.startswith("+"):
         if not re.fullmatch(PHONE_PATTERN, login):
@@ -85,8 +91,6 @@ def validate_login(login: str):
     if "@" in login:
         if not re.fullmatch(EMAIL_PATTERN, login):
             return False, "Неверный формат email"
-        if login.lower() in BLACKLIST_LOGINS:
-            return False, "Email находится в чёрном списке"
         return True, None
 
     # Обычный логин
@@ -98,8 +102,6 @@ def validate_login(login: str):
             return False, "Логин может содержать только латиницу, цифры и _"
         return False, "Неверный формат логина"
 
-    if login.lower() in BLACKLIST_LOGINS:
-        return False, "Логин находится в чёрном списке"
 
     return True, None
 
@@ -176,26 +178,27 @@ def register_user(login: str, password: str, password_confirm: str):
 
 
 def Main():
-    try:
-        login = input("Логин: ")
-        password = input("Пароль: ")
-        password_confirm = input("Подтверждение пароля: ")
+    while True:
+        try:
+            login = input("Логин: ")
+            password = input("Пароль: ")
+            password_confirm = input("Подтверждение пароля: ")
 
-        result, message = register_user(login, password, password_confirm)
+            result, message = register_user(login, password, password_confirm)
 
-        print(f"Результат: {result}")
-        print(f"Сообщение: {message if message else '<пусто>'}")
-        if not result:
-            logging.warning("Итог регистрации: неуспех — %s", message)
-        else:
-            logging.info("Итог регистрации: успех")
+            print(f"Результат: {result}")
+            print(f"Сообщение: {message if message else '<пусто>'}")
+            if not result:
+                logging.warning("Итог регистрации: неуспех — %s", message)
+            else:
+                logging.info("Итог регистрации: успех")
 
-    except KeyboardInterrupt:
-        logging.warning("Прервано пользователем (Ctrl+C)")
-    except Exception as ex:
-        logging.error("Критическая ошибка в Main: %s", ex)
-        logging.exception("Трассировка стека:")
-        print("Произошла непредвиденная ошибка. Подробности в логах.")
+        except KeyboardInterrupt:
+            logging.warning("Прервано пользователем (Ctrl+C)")
+        except Exception as ex:
+            logging.error("Критическая ошибка в Main: %s", ex)
+            logging.exception("Трассировка стека:")
+            print("Произошла непредвиденная ошибка. Подробности в логах.")
 
 
 if __name__ == "__main__":

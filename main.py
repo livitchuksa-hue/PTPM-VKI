@@ -3,21 +3,28 @@ import sys
 import re
 import os
 import traceback
+from datetime import datetime
 
 
 log_format = "%(asctime)s | [%(levelname)-7s] | %(message)s"
 date_format = "%Y-%m-%d %H:%M:%S"
 
+# 1. Создаем папку logs, если её нет
 if not os.path.exists("logs"):
     os.makedirs("logs")
 
+# 2. Генерируем имя файла с текущей датой и временем
+timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+log_filename = f"logs/app_{timestamp}.log"
+
+# 3. Настраиваем логгер
 logging.basicConfig(
     level=logging.DEBUG,
     format=log_format,
     datefmt=date_format,
     handlers=[
-        logging.StreamHandler(sys.stdout),
-        logging.FileHandler("logs/file_txt.log", encoding="utf-8")
+        logging.StreamHandler(sys.stdout),                   # Вывод в консоль
+        logging.FileHandler(log_filename, encoding="utf-8")  # Вывод в файл
     ]
 )
 

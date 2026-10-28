@@ -2,7 +2,6 @@ import logging
 import sys
 import re
 import os
-import traceback
 from datetime import datetime
 
 

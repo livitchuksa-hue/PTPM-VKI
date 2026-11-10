@@ -1,0 +1,176 @@
+import sys
+import os
+import unittest
+import logging
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
+
+from main import validate_login, validate_password, register_user, mask_password
+
+logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+
+
+class TestMaskPassword(unittest.TestCase):
+
+    def test_empty_password_returns_empty_marker(self):
+        logging.info("Запуск: test_empty_password_returns_empty_marker")
+        self.assertEqual(mask_password(""), "<empty>")
+
+    def test_none_password_returns_empty_marker(self):
+        logging.info("Запуск: test_none_password_returns_empty_marker")
+        self.assertEqual(mask_password(None), "<empty>")
+
+    def test_valid_password_returns_hidden_hash(self):
+        logging.info("Запуск: test_valid_password_returns_hidden_hash")
+        result = mask_password("Привет1!")
+        self.assertTrue(result.startswith("<hidden:"))
+        self.assertTrue(result.endswith(">"))
+
+    def test_same_password_gives_same_hash(self):
+        logging.info("Запуск: test_same_password_gives_same_hash")
+        self.assertEqual(mask_password("Secret123"), mask_password("Secret123"))
+
+
+class TestValidateLogin(unittest.TestCase):
+
+    def test_none_login_returns_error(self):
+        logging.info("Запуск: test_none_login_returns_error")
+        ok, err = validate_login(None)
+        self.assertFalse(ok)
+        self.assertEqual(err, "Логин не может быть пустым")
+
+    def test_empty_login_returns_error(self):
+        logging.info("Запуск: test_empty_login_returns_error")
+        ok, err = validate_login("")
+        self.assertFalse(ok)
+        self.assertEqual(err, "Логин не может быть пустым")
+
+    def test_login_with_blacklisted_word_returns_error(self):
+        logging.info("Запуск: test_login_with_blacklisted_word_returns_error")
+        ok, err = validate_login("superadmin123")
+        self.assertFalse(ok)
+        self.assertIn("запрещенное слово", err)
+
+    def test_valid_phone_returns_success(self):
+        logging.info("Запуск: test_valid_phone_returns_success")
+        ok, err = validate_login("+7-123-456-7890")
+        self.assertTrue(ok)
+        self.assertIsNone(err)
+
+    def test_invalid_phone_format_returns_error(self):
+        logging.info("Запуск: test_invalid_phone_format_returns_error")
+        ok, err = validate_login("+71234567890")
+        self.assertFalse(ok)
+        self.assertIn("Неверный формат телефона", err)
+
+    def test_valid_email_returns_success(self):
+        logging.info("Запуск: test_valid_email_returns_success")
+        ok, err = validate_login("test@example.com")
+        self.assertTrue(ok)
+        self.assertIsNone(err)
+
+    def test_invalid_email_format_returns_error(self):
+        logging.info("Запуск: test_invalid_email_format_returns_error")
+        ok, err = validate_login("test@example")
+        self.assertFalse(ok)
+        self.assertIn("Неверный формат email", err)
+
+    def test_too_short_login_returns_error(self):
+        logging.info("Запуск: test_too_short_login_returns_error")
+        ok, err = validate_login("ab")
+        self.assertFalse(ok)
+        self.assertIn("минимум 5 символов", err)
+
+    def test_login_with_cyrillic_returns_error(self):
+        logging.info("Запуск: test_login_with_cyrillic_returns_error")
+        ok, err = validate_login("привет123")
+        self.assertFalse(ok)
+        self.assertIn("только латиницу", err)
+
+    def test_valid_standard_login_returns_success(self):
+        logging.info("Запуск: test_valid_standard_login_returns_success")
+        ok, err = validate_login("good_user_99")
+        self.assertTrue(ok)
+        self.assertIsNone(err)
+
+
+class TestValidatePassword(unittest.TestCase):
+
+    def test_none_password_returns_error(self):
+        logging.info("Запуск: test_none_password_returns_error")
+        ok, err = validate_password(None)
+        self.assertFalse(ok)
+        self.assertEqual(err, "Пароль не может быть пустым")
+
+    def test_too_short_password_returns_error(self):
+        logging.info("Запуск: test_too_short_password_returns_error")
+        ok, err = validate_password("Ая1!")
+        self.assertFalse(ok)
+        self.assertIn("минимум 7 символов", err)
+
+    def test_password_without_lowercase_returns_error(self):
+        logging.info("Запуск: test_password_without_lowercase_returns_error")
+        ok, err = validate_password("ПАРОЛЬ1!")
+        self.assertFalse(ok)
+        self.assertIn("строчную букву", err)
+
+    def test_password_without_uppercase_returns_error(self):
+        logging.info("Запуск: test_password_without_uppercase_returns_error")
+        ok, err = validate_password("пароль1!")
+        self.assertFalse(ok)
+        self.assertIn("заглавную букву", err)
+
+    def test_password_without_digit_returns_error(self):
+        logging.info("Запуск: test_password_without_digit_returns_error")
+        ok, err = validate_password("Пароль!")
+        self.assertFalse(ok)
+        self.assertIn("минимум одну цифру", err)
+
+    def test_password_without_special_char_returns_error(self):
+        logging.info("Запуск: test_password_without_special_char_returns_error")
+        ok, err = validate_password("Пароль1")
+        self.assertFalse(ok)
+        self.assertIn("спецсимвол", err)
+
+    def test_password_with_latin_returns_error(self):
+        logging.info("Запуск: test_password_with_latin_returns_error")
+        ok, err = validate_password("Пароль1!a")
+        self.assertFalse(ok)
+        self.assertIn("недопустимые символы", err)
+
+    def test_valid_password_returns_success(self):
+        logging.info("Запуск: test_valid_password_returns_success")
+        ok, err = validate_password("Пароль1!")
+        self.assertTrue(ok)
+        self.assertIsNone(err)
+
+
+class TestRegisterUser(unittest.TestCase):
+
+    def test_register_with_valid_data_returns_success(self):
+        logging.info("Запуск: test_register_with_valid_data_returns_success")
+        ok, err = register_user("valid_login", "Пароль1!", "Пароль1!")
+        self.assertTrue(ok)
+        self.assertEqual(err, "")
+
+    def test_register_with_mismatched_passwords_returns_error(self):
+        logging.info("Запуск: test_register_with_mismatched_passwords_returns_error")
+        ok, err = register_user("valid_login", "Пароль1!", "Пароль2!")
+        self.assertFalse(ok)
+        self.assertEqual(err, "Пароль и подтверждение пароля не совпадают")
+
+    def test_register_with_invalid_login_returns_error(self):
+        logging.info("Запуск: test_register_with_invalid_login_returns_error")
+        ok, err = register_user("root", "Пароль1!", "Пароль1!")
+        self.assertFalse(ok)
+        self.assertIn("запрещенное слово", err)
+
+    def test_register_with_invalid_password_returns_error(self):
+        logging.info("Запуск: test_register_with_invalid_password_returns_error")
+        ok, err = register_user("valid_login", "short", "short")
+        self.assertFalse(ok)
+        self.assertIn("минимум 7 символов", err)
+
+
+if __name__ == "__main__":
+    unittest.main()
